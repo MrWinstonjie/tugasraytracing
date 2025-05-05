@@ -37,10 +37,20 @@ class Ray {
 
 // Sphere structure
 class Sphere {
-    constructor(center, radius, color) {
+    constructor(center, radius, material) {
         this.center = center;
         this.radius = radius;
-        this.color = color || { r: 255, g: 0, b: 0 }; // Default red
+        this.material = material;
+    }
+
+    // Calculate normal at intersection point
+    getNormal(intersectionPoint) {
+        return normalize(subtract(intersectionPoint, this.center));
+    }
+
+    // Calculate intersection point
+    getIntersectionPoint(ray, t) {
+        return add(ray.origin, scale(ray.direction, t));
     }
 }
 
@@ -64,14 +74,20 @@ function intersectRaySphere(ray, sphere) {
 function findClosestIntersection(ray, spheres) {
     let closestT = Infinity;
     let closestSphere = null;
+    let intersectionPoint = null;
 
     for (const sphere of spheres) {
         const t = intersectRaySphere(ray, sphere);
         if (t > 0 && t < closestT) {
             closestT = t;
             closestSphere = sphere;
+            intersectionPoint = sphere.getIntersectionPoint(ray, t);
         }
     }
 
-    return { t: closestT, sphere: closestSphere };
+    return { 
+        t: closestT, 
+        sphere: closestSphere,
+        point: intersectionPoint
+    };
 } 

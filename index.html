@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Basic Raytracing Demo - Multiple Objects</title>
+    <title>Basic Raytracing Demo - Multiple Objects with Lighting</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Menggunakan CDN yang lebih reliable -->
     <script src="https://cdn.jsdelivr.net/npm/gl-matrix@3.4.2/gl-matrix-min.js"></script>
     <!-- Menggunakan path relatif untuk helper.js -->
     <script src="./helper.js"></script>
+    <script src="./lighting.js"></script>
     <style>
         canvas {
             border: 1px solid black;
@@ -37,22 +38,52 @@
         const width = canvas.width;
         const height = canvas.height;
 
+        // Create light
+        const light = new Light(
+            vec3.fromValues(2, 2, 0), // light position
+            { r: 0.2, g: 0.2, b: 0.2 }, // ambient
+            { r: 0.8, g: 0.8, b: 0.8 }, // diffuse
+            { r: 1.0, g: 1.0, b: 1.0 }  // specular
+        );
+
+        // Create materials for spheres
+        const redMaterial = new Material(
+            { r: 0.1, g: 0.0, b: 0.0 },  // ambient
+            { r: 0.7, g: 0.0, b: 0.0 },  // diffuse
+            { r: 0.3, g: 0.3, b: 0.3 },  // specular
+            32.0                         // shininess
+        );
+
+        const greenMaterial = new Material(
+            { r: 0.0, g: 0.1, b: 0.0 },  // ambient
+            { r: 0.0, g: 0.7, b: 0.0 },  // diffuse
+            { r: 0.3, g: 0.3, b: 0.3 },  // specular
+            32.0                         // shininess
+        );
+
+        const blueMaterial = new Material(
+            { r: 0.0, g: 0.0, b: 0.1 },  // ambient
+            { r: 0.0, g: 0.0, b: 0.7 },  // diffuse
+            { r: 0.3, g: 0.3, b: 0.3 },  // specular
+            32.0                         // shininess
+        );
+
         // Create multiple spheres with overlapping positions
         const spheres = [
             new Sphere(
                 vec3.fromValues(0, 0, -5), // center
                 1.5, // radius (larger)
-                { r: 255, g: 0, b: 0 } // red
+                redMaterial
             ),
             new Sphere(
                 vec3.fromValues(-1, 0, -4), // center (closer to camera)
                 1.2, // radius
-                { r: 0, g: 255, b: 0 } // green
+                greenMaterial
             ),
             new Sphere(
                 vec3.fromValues(1, 0, -6), // center (further from camera)
                 1.2, // radius
-                { r: 0, g: 0, b: 255 } // blue
+                blueMaterial
             )
         ];
 
@@ -82,12 +113,25 @@
                     const pixelIndex = (y * width + x) * 4;
 
                     if (intersection.sphere) {
-                        // If there's an intersection, use the sphere's color
-                        const color = intersection.sphere.color;
-                        data[pixelIndex] = color.r;     // R
-                        data[pixelIndex + 1] = color.g; // G
-                        data[pixelIndex + 2] = color.b; // B
-                        data[pixelIndex + 3] = 255;     // A
+                        // Calculate lighting
+                        const normal = intersection.sphere.getNormal(intersection.point);
+                        const lightDir = normalize(subtract(light.position, intersection.point));
+                        const viewDir = normalize(subtract(cameraPos, intersection.point));
+
+                        // Calculate final color using Phong model
+                        const finalColor = calculatePhongColor(
+                            intersection.sphere.material,
+                            light,
+                            normal,
+                            lightDir,
+                            viewDir
+                        );
+
+                        // Convert from 0-1 to 0-255 range
+                        data[pixelIndex] = finalColor.r * 255;     // R
+                        data[pixelIndex + 1] = finalColor.g * 255; // G
+                        data[pixelIndex + 2] = finalColor.b * 255; // B
+                        data[pixelIndex + 3] = 255;                // A
                     } else {
                         // If no intersection, color the pixel white
                         data[pixelIndex] = 255;     // R
