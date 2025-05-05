@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Basic Raytracing Demo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/3.4.2/gl-matrix-min.js"></script>
+    <script src="helper.js"></script>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: 0 auto;
+        }
+        body {
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // Create a sphere at the center of the scene
+        const sphere = new Sphere(
+            vec3.fromValues(0, 0, -5), // center
+            1.0 // radius
+        );
+
+        // Camera position
+        const cameraPos = vec3.fromValues(0, 0, 0);
+
+        // Render the scene
+        function render() {
+            const imageData = ctx.createImageData(width, height);
+            const data = imageData.data;
+
+            // For each pixel
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    // Convert pixel coordinates to normalized device coordinates (-1 to 1)
+                    const ndcX = (2.0 * x) / width - 1.0;
+                    const ndcY = 1.0 - (2.0 * y) / height;
+
+                    // Create ray direction
+                    const rayDir = normalize(vec3.fromValues(ndcX, ndcY, -1));
+                    const ray = new Ray(cameraPos, rayDir);
+
+                    // Check intersection
+                    const t = intersectRaySphere(ray, sphere);
+
+                    // Calculate pixel index
+                    const pixelIndex = (y * width + x) * 4;
+
+                    if (t > 0) {
+                        // If there's an intersection, color the pixel red
+                        data[pixelIndex] = 255;     // R
+                        data[pixelIndex + 1] = 0;   // G
+                        data[pixelIndex + 2] = 0;   // B
+                        data[pixelIndex + 3] = 255; // A
+                    } else {
+                        // If no intersection, color the pixel white
+                        data[pixelIndex] = 255;     // R
+                        data[pixelIndex + 1] = 255; // G
+                        data[pixelIndex + 2] = 255; // B
+                        data[pixelIndex + 3] = 255; // A
+                    }
+                }
+            }
+
+            // Put the image data to the canvas
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        // Start rendering
+        render();
+    </script>
+</body>
+</html> 
