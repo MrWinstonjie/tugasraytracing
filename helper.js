@@ -38,6 +38,9 @@ class Ray {
 // Sphere structure
 class Sphere {
     constructor(center, radius, material) {
+        if (!center || !radius) {
+            throw new Error('Sphere requires center and radius');
+        }
         this.center = center;
         this.radius = radius;
         this.material = material;
@@ -45,17 +48,27 @@ class Sphere {
 
     // Calculate normal at intersection point
     getNormal(intersectionPoint) {
+        if (!intersectionPoint) {
+            throw new Error('Intersection point is required');
+        }
         return normalize(subtract(intersectionPoint, this.center));
     }
 
     // Calculate intersection point
     getIntersectionPoint(ray, t) {
+        if (!ray || t === undefined) {
+            throw new Error('Ray and t parameter are required');
+        }
         return add(ray.origin, scale(ray.direction, t));
     }
 }
 
 // Ray-Sphere intersection
 function intersectRaySphere(ray, sphere) {
+    if (!ray || !sphere) {
+        throw new Error('Ray and sphere are required');
+    }
+    
     const oc = subtract(ray.origin, sphere.center);
     const a = dot(ray.direction, ray.direction);
     const b = 2.0 * dot(oc, ray.direction);
@@ -72,6 +85,10 @@ function intersectRaySphere(ray, sphere) {
 
 // Find closest intersection among multiple spheres
 function findClosestIntersection(ray, spheres) {
+    if (!ray || !spheres || !Array.isArray(spheres)) {
+        throw new Error('Ray and spheres array are required');
+    }
+
     let closestT = Infinity;
     let closestSphere = null;
     let intersectionPoint = null;
